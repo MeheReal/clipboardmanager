@@ -10,7 +10,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <AssemblyName>ClipboardManager</AssemblyName>
     <RootNamespace>ClipboardManager</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <ObfuscarVersion>2.2.50</ObfuscarVersion>
 
     <!-- Defaults used by the standalone Windows release publish command. -->
