@@ -1,0 +1,210 @@
+<Window x:Class="ClipboardManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Clipboard Manager"
+        Width="740"
+        MinWidth="520"
+        MaxWidth="900"
+        MaxHeight="330"
+        SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        WindowStartupLocation="Manual"
+        Deactivated="Window_Deactivated"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <Style x:Key="DeleteHistoryItemButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,1,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#D5DCE7" />
+            <Setter Property="FontFamily" Value="Segoe UI Symbol" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Visibility" Value="Hidden" />
+            <Setter Property="ToolTip" Value="Delete this item" />
+            <Setter Property="AutomationProperties.Name" Value="Delete clipboard item" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonChrome"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="0,-2,0,0"
+                                              RecognizesAccessKey="False" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonChrome" Property="Background" Value="#B42318" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonChrome" Property="Background" Value="#8F1D16" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsMouseOver}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="5">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#0078D4" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border x:Name="WindowSurface"
+            Background="#181B24"
+            BorderBrush="#2D3748"
+            BorderThickness="1"
+            CornerRadius="9"
+            Padding="8"
+            MouseLeftButtonDown="WindowSurface_MouseLeftButtonDown">
+        <StackPanel>
+            <Border x:Name="SearchBorder"
+                    Height="40"
+                    Background="#11141B"
+                    BorderBrush="#0078D4"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="9,0">
+                <Grid>
+                    <TextBlock x:Name="SearchPlaceholder"
+                               Text="Search clipboard history"
+                               Foreground="#778296"
+                               FontSize="14"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False" />
+                    <TextBox x:Name="SearchTextBox"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             TextChanged="SearchTextBox_TextChanged"
+                             GotKeyboardFocus="SearchTextBox_GotKeyboardFocus"
+                             LostKeyboardFocus="SearchTextBox_LostKeyboardFocus"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#FFFFFF"
+                             CaretBrush="#60A5FA"
+                             SelectionBrush="#345C91"
+                             FontSize="14"
+                             VerticalContentAlignment="Center"
+                             Focusable="True" />
+                </Grid>
+            </Border>
+
+            <Grid Margin="0,6,0,0">
+                <ListBox x:Name="HistoryList"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="0"
+                         Height="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         SelectionChanged="HistoryList_SelectionChanged"
+                         PreviewMouseLeftButtonUp="HistoryList_MouseLeftButtonUp">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Height="32" Margin="7,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="26" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TextContent}"
+                                           Foreground="#FFFFFF"
+                                           FontSize="13"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxHeight="19" />
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource DeleteHistoryItemButtonStyle}"
+                                        Content="×"
+                                        Click="DeleteItem_Click" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Height="32"
+                        Background="#202B37"
+                        CornerRadius="5"
+                        Padding="8,0"
+                        Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="No matching results"
+                               Foreground="#AAB5C4"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <Border Height="27"
+                    Margin="0,5,0,0"
+                    BorderBrush="#2D3748"
+                    BorderThickness="0,1,0,0"
+                    Padding="7,0,5,0">
+                <TextBlock Foreground="#8791A0"
+                           FontSize="10"
+                           VerticalAlignment="Center"
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis"
+                           MaxHeight="16">
+                    <Run Text="Recently pasted  ·  " />
+                    <Run Text="{Binding LastPastedItemText, Mode=OneWay}" />
+                </TextBlock>
+            </Border>
+        </StackPanel>
+    </Border>
+</Window>
+
+

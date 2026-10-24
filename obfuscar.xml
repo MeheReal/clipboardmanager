@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Obfuscator>
+  <!-- The build target replaces these with absolute paths in obj before running Obfuscar. -->
+  <Var name="InPath" value="." />
+  <Var name="OutPath" value=".\obfuscar-output" />
+
+  <!-- Rename public and private type/member names. Keep properties and events stable for WPF. -->
+  <Var name="KeepPublicApi" value="false" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="RenameProperties" value="false" />
+  <Var name="RenameEvents" value="false" />
+  <Var name="HideStrings" value="false" />
+
+  <AssemblySearchPath path="__NETCORE_REFERENCE_PATH__" />
+  <AssemblySearchPath path="__WINDOWS_DESKTOP_REFERENCE_PATH__" />
+  <Module file="ClipboardManager.dll">
+    <!-- WPF discovers the application/window XAML classes and their generated handlers by name. -->
+    <SkipType name="ClipboardManager.App" skipMethods="true" skipFields="true" skipProperties="true" skipEvents="true" />
+    <SkipType name="ClipboardManager.MainWindow" skipMethods="true" skipFields="true" skipProperties="true" skipEvents="true" />
+  </Module>
+</Obfuscator>
+

@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <AssemblyName>ClipboardManager</AssemblyName>
+    <RootNamespace>ClipboardManager</RootNamespace>
+    <Version>1.0.0</Version>
+    <ObfuscarVersion>2.2.50</ObfuscarVersion>
+
+    <!-- Defaults used by the standalone Windows release publish command. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Obfuscar" Version="$(ObfuscarVersion)" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Run after compilation but before publish bundles the assembly into the single-file executable. -->
+  <Target Name="ObfuscateReleaseAssembly"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <PropertyGroup>
+      <_ObfuscarInputPath>$([System.IO.Path]::GetFullPath('$(TargetDir)'))</_ObfuscarInputPath>
+      <_ObfuscarInputAssembly>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)$(AssemblyName).dll'))</_ObfuscarInputAssembly>
+      <_ObfuscarOutputPath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)obfuscar\'))</_ObfuscarOutputPath>
+      <_ObfuscarGeneratedConfig>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)obfuscar.generated.xml'))</_ObfuscarGeneratedConfig>
+      <_ObfuscarExecutable>$(Obfuscar)</_ObfuscarExecutable>
+      <_ObfuscarTargetFramework>$([System.Text.RegularExpressions.Regex]::Replace('$(TargetFramework)', '-windows.*$', ''))</_ObfuscarTargetFramework>
+      <_ObfuscarNetCoreRefPath>@(ResolvedFrameworkReference->WithMetadataValue('Identity', 'Microsoft.NETCore.App')->'%(TargetingPackPath)')</_ObfuscarNetCoreRefPath>
+      <_ObfuscarWindowsDesktopRefPath>@(ResolvedFrameworkReference->WithMetadataValue('Identity', 'Microsoft.WindowsDesktop.App')->'%(TargetingPackPath)')</_ObfuscarWindowsDesktopRefPath>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(_ObfuscarExecutable)')"
+           Text="Obfuscar executable was not found at '$(_ObfuscarExecutable)'. Restore the Obfuscar NuGet package and rebuild." />
+    <MakeDir Directories="$(_ObfuscarOutputPath)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\obfuscar.xml"
+          DestinationFiles="$(_ObfuscarGeneratedConfig)" />
+    <XmlPoke XmlInputPath="$(_ObfuscarGeneratedConfig)"
+             Query="/Obfuscator/Var[@name='InPath']/@value"
+             Value="$(_ObfuscarInputPath)" />
+    <XmlPoke XmlInputPath="$(_ObfuscarGeneratedConfig)"
+             Query="/Obfuscator/Var[@name='OutPath']/@value"
+             Value="$(_ObfuscarOutputPath)" />
+    <XmlPoke XmlInputPath="$(_ObfuscarGeneratedConfig)"
+             Query="/Obfuscator/Module/@file"
+             Value="$(_ObfuscarInputAssembly)" />
+    <XmlPoke XmlInputPath="$(_ObfuscarGeneratedConfig)"
+             Query="/Obfuscator/AssemblySearchPath[1]/@path"
+             Value="$(_ObfuscarNetCoreRefPath)\ref\$(_ObfuscarTargetFramework)" />
+    <XmlPoke XmlInputPath="$(_ObfuscarGeneratedConfig)"
+             Query="/Obfuscator/AssemblySearchPath[2]/@path"
+             Value="$(_ObfuscarWindowsDesktopRefPath)\ref\$(_ObfuscarTargetFramework)" />
+
+    <Message Importance="high" Text="Obfuscating $(TargetPath) with Obfuscar." />
+    <Exec Command="&quot;$(_ObfuscarExecutable)&quot; &quot;$(_ObfuscarGeneratedConfig)&quot;" />
+    <Error Condition="!Exists('$(_ObfuscarOutputPath)$(AssemblyName).dll')"
+           Text="Obfuscar completed without producing '$(_ObfuscarOutputPath)$(AssemblyName).dll'." />
+    <Copy SourceFiles="$(_ObfuscarOutputPath)$(AssemblyName).dll"
+          DestinationFiles="$(TargetPath)"
+          OverwriteReadOnlyFiles="true" />
+  </Target>
+</Project>
+
+
+
